@@ -1,0 +1,30 @@
+name: HomePulse
+options:
+  bundleIdPrefix: com.ryankaya
+  deploymentTarget:
+    iOS: "16.2"
+  xcodeVersion: "15.0"
+targets:
+  HomePulse:
+    type: application
+    platform: iOS
+    sources:
+      - HomePulse
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ryankaya.homepulse
+        SWIFT_VERSION: 5.9
+        TARGETED_DEVICE_FAMILY: "1,2"
+        DEVELOPMENT_TEAM: ""
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    info:
+      path: HomePulse/Info.plist
+      properties:
+        NSHomeKitUsageDescription: "HomePulse uses HomeKit to discover and control your smart home accessories."
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIUserInterfaceStyle: Dark
+    entitlements:
+      path: HomePulse/HomePulse.entitlements
