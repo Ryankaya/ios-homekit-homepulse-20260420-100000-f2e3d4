@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -44,7 +44,7 @@
 		67A75C175F2523523A570AE0 /* HomePulse.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HomePulse.entitlements; sourceTree = "<group>"; };
 		6FD12D91BEC60DA9C312AC9D /* AccessoryDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessoryDetailSheet.swift; sourceTree = "<group>"; };
 		7F42200280324D9E2649FB3D /* PulseRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PulseRingView.swift; sourceTree = "<group>"; };
-		A7562EC2669CE8AF0DCDD693 /* HomePulse.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = HomePulse.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A7562EC2669CE8AF0DCDD693 /* HomePulse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HomePulse.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B028D3F85962ADC4BF068404 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		BFB522B381CE97B2631CC3AD /* HomeKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeKitManager.swift; sourceTree = "<group>"; };
 		D2065DF8E841CD775DC96164 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
@@ -173,11 +173,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1500;
-				TargetAttributes = {
-					83BD1292ECC73E4DEDA5280E = {
-						DevelopmentTeam = "";
-					};
-				};
 			};
 			buildConfigurationList = 494D0373750EE89FCDFB3096 /* Build configuration list for PBXProject "HomePulse" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -189,7 +184,6 @@
 			);
 			mainGroup = 37DB420D8B58C4C0507E4701;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -247,7 +241,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = HomePulse/HomePulse.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = N3X2H33TR7;
 				INFOPLIST_FILE = HomePulse/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -386,7 +380,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = HomePulse/HomePulse.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = N3X2H33TR7;
 				INFOPLIST_FILE = HomePulse/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

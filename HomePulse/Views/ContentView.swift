@@ -39,8 +39,10 @@ struct ContentView: View {
         guard let selected = homeKitManager.selectedHome else { return }
         let homeVM = HomeViewModel(home: selected)
         homeVM.readAllCharacteristics()
+        // Wait for characteristic reads to populate, then rebuild the floor
+        // plan from actual HomeKit rooms/accessories (tagged by unique ID).
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            floorPlan.syncFromHomeKit(homeVM)
+            floorPlan.rebuildFromHomeKit(homeVM)
         }
     }
 }

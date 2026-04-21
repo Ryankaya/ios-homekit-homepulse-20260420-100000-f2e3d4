@@ -261,7 +261,7 @@ private struct DashAccessoryCard: View {
                     Spacer()
                     // For thermostat show temp; for camera show dot
                     if accessory.category == .thermostat {
-                        Text(String(format: "%.0f°", accessory.targetTemp))
+                        Text(String(format: "%.0f°F", Double(accessory.targetTemp) * 9.0 / 5.0 + 32.0))
                             .font(.system(size: 11, weight: .bold, design: .rounded))
                             .foregroundStyle(accessory.isPowered ? .orange : .gray)
                     } else if accessory.category == .camera && accessory.isPowered {

@@ -9,8 +9,14 @@ struct ThermostatSheet: View {
     @State private var animatedCurrent: Double = 0
     @State private var animatedTarget: Double  = 0
 
-    private let minTemp: Double = 14
-    private let maxTemp: Double = 32
+    // Storage is in Celsius (HomeKit's native unit) — UI displays Fahrenheit.
+    private let minTemp: Double = 14   // 57°F
+    private let maxTemp: Double = 32   // 90°F
+
+    // MARK: - Temperature conversion helpers
+
+    private func cToF(_ c: Double) -> Double { c * 9.0 / 5.0 + 32.0 }
+    private func fToC(_ f: Double) -> Double { (f - 32.0) * 5.0 / 9.0 }
 
     var body: some View {
         NavigationView {
@@ -142,7 +148,7 @@ struct ThermostatSheet: View {
 
             // Center
             VStack(spacing: 6) {
-                Text(String(format: "%.1f°C", animatedCurrent))
+                Text(String(format: "%.0f°F", cToF(animatedCurrent)))
                     .font(.system(size: 48, weight: .thin, design: .rounded))
                     .foregroundStyle(.white)
                     .contentTransition(.numericText())
@@ -154,7 +160,7 @@ struct ThermostatSheet: View {
                 HStack(spacing: 4) {
                     Image(systemName: "arrow.right")
                         .font(.caption2)
-                    Text(String(format: "%.1f°C", animatedTarget))
+                    Text(String(format: "%.0f°F", cToF(animatedTarget)))
                         .font(.system(size: 18, weight: .semibold, design: .rounded))
                 }
                 .foregroundStyle(accessory.thermostatMode.color)
@@ -176,10 +182,11 @@ struct ThermostatSheet: View {
 
     private var tempAdjustRow: some View {
         HStack(spacing: 0) {
-            adjustButton(icon: "minus", step: -0.5)
+            // Step by 1°F (≈0.556°C) — we round to whole °F for the target.
+            adjustButton(icon: "minus", fahrenheitDelta: -1)
             Spacer()
             VStack(spacing: 2) {
-                Text(String(format: "%.1f°C", accessory.targetTemp))
+                Text(String(format: "%.0f°F", cToF(Double(accessory.targetTemp))))
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                     .contentTransition(.numericText())
@@ -191,16 +198,18 @@ struct ThermostatSheet: View {
                     .textCase(.uppercase)
             }
             Spacer()
-            adjustButton(icon: "plus", step: 0.5)
+            adjustButton(icon: "plus", fahrenheitDelta: 1)
         }
         .padding(.horizontal, 32)
     }
 
-    private func adjustButton(icon: String, step: Float) -> some View {
+    private func adjustButton(icon: String, fahrenheitDelta: Double) -> some View {
         Button {
-            let newVal = (accessory.targetTemp + step).clamped(Float(minTemp)...Float(maxTemp))
-            accessory.targetTemp = newVal
-            withAnimation(.spring(response: 0.3)) { animatedTarget = Double(newVal) }
+            let currentF = cToF(Double(accessory.targetTemp)).rounded()
+            let newF     = currentF + fahrenheitDelta
+            let newC     = fToC(newF).clamped(minTemp...maxTemp)
+            accessory.targetTemp = Float(newC)
+            withAnimation(.spring(response: 0.3)) { animatedTarget = newC }
             onUpdate(accessory)
         } label: {
             ZStack {
@@ -249,11 +258,12 @@ struct ThermostatSheet: View {
     // MARK: - Stats
 
     private var statsRow: some View {
-        HStack(spacing: 12) {
-            statCard(icon: "thermometer.low",   label: "Min",     value: "\(Int(minTemp))°C", color: .blue)
-            statCard(icon: "thermometer.high",  label: "Max",     value: "\(Int(maxTemp))°C", color: .red)
+        let deltaF = abs(cToF(Double(accessory.currentTemp)) - cToF(Double(accessory.targetTemp)))
+        return HStack(spacing: 12) {
+            statCard(icon: "thermometer.low",   label: "Min",     value: "\(Int(cToF(minTemp).rounded()))°F", color: .blue)
+            statCard(icon: "thermometer.high",  label: "Max",     value: "\(Int(cToF(maxTemp).rounded()))°F", color: .red)
             statCard(icon: "arrow.up.arrow.down",label: "Delta",
-                     value: String(format: "%.1f°", abs(accessory.currentTemp - accessory.targetTemp)),
+                     value: String(format: "%.0f°", deltaF),
                      color: .orange)
         }
         .padding(.horizontal, 20)

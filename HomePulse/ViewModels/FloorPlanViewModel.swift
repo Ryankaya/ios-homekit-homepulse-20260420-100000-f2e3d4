@@ -41,6 +41,7 @@ struct FurniturePiece {
 
 struct FloorAccessory: Identifiable {
     var id = UUID()
+    var homeKitAccessoryID: UUID? = nil   // HMAccessory.uniqueIdentifier when synced from real HomeKit
     var name: String
     var category: AccessoryCategory
     var relX: CGFloat           // 0–1 relative to room
@@ -51,7 +52,7 @@ struct FloorAccessory: Identifiable {
     var brightness: Float       = 100
     var colorTemperature: Float = 3000  // 2700–6500 K
 
-    // Thermostat
+    // Thermostat (all temperatures stored in Celsius — HomeKit's native unit)
     var currentTemp: Float      = 21.5
     var targetTemp: Float       = 22.0
     var thermostatMode: ThermostatMode = .auto
@@ -64,6 +65,7 @@ struct FloorAccessory: Identifiable {
 
 struct FloorRoom: Identifiable {
     var id        = UUID()
+    var homeKitRoomID: UUID? = nil   // HMRoom.uniqueIdentifier when synced from real HomeKit
     var name: String
     var gridX: CGFloat; var gridY: CGFloat
     var gridW: CGFloat; var gridH: CGFloat
@@ -80,10 +82,12 @@ final class FloorPlanViewModel: NSObject, ObservableObject {
     @Published var scale: CGFloat   = 1.0
     @Published var panOffset: CGSize = .zero
 
-    var homeName: String = "My Home"
+    @Published var homeName: String = "My Home"
+    @Published var isRealHome: Bool = false   // true when rebuilt from real HomeKit
 
-    // Bridge to real HomeKit (set by ContentView when a real home is available)
-    weak var homeKitVM: HomeViewModel?
+    // Bridge to real HomeKit (strong ref — ContentView creates a local homeVM
+    // that would otherwise be deallocated as soon as syncHomeKit() returns)
+    var homeKitVM: HomeViewModel?
 
     let tileW: CGFloat = 84
     let tileH: CGFloat = 42
@@ -197,31 +201,99 @@ final class FloorPlanViewModel: NSObject, ObservableObject {
         }
     }
 
-    // MARK: - HomeKit sync (called by ContentView when real HomeKit loads)
+    // MARK: - HomeKit sync — REBUILD the floor plan from actual HomeKit data
+    //
+    // Creates one FloorRoom per HMRoom and one FloorAccessory per HMAccessory,
+    // tagged with HomeKit unique identifiers so bridge writes are reliable
+    // (no fragile name-matching). Rooms are laid out in a grid.
 
-    func syncFromHomeKit(_ homeKitVM: HomeViewModel) {
+    func rebuildFromHomeKit(_ homeKitVM: HomeViewModel) {
         self.homeKitVM = homeKitVM
-        homeName = homeKitVM.home.name
+        self.homeName  = homeKitVM.home.name
 
-        for ri in rooms.indices {
-            let floorRoomName = rooms[ri].name
-            guard let hmRoom = homeKitVM.rooms.first(where: { nameMatches($0.name, floorRoomName) }) else { continue }
-            let hmAccs = homeKitVM.accessories(in: hmRoom)
-            for ai in rooms[ri].accessories.indices {
-                let floorAccName = rooms[ri].accessories[ai].name
-                guard let hmAcc = hmAccs.first(where: { nameMatches($0.name, floorAccName) }) else { continue }
-                pullState(from: hmAcc, into: &rooms[ri].accessories[ai])
-            }
+        let palette: [Color] = [
+            Color(red: 0.95, green: 0.88, blue: 0.72), // warm sand
+            Color(red: 0.72, green: 0.84, blue: 0.97), // soft blue
+            Color(red: 0.88, green: 0.80, blue: 0.97), // lavender
+            Color(red: 0.78, green: 0.95, blue: 0.80), // mint
+            Color(red: 0.90, green: 0.86, blue: 0.80), // cream
+            Color(red: 0.78, green: 0.92, blue: 0.96), // ice
+            Color(red: 0.97, green: 0.82, blue: 0.72), // peach
+            Color(red: 0.82, green: 0.82, blue: 0.96), // periwinkle
+        ]
+
+        let hmRooms = homeKitVM.rooms
+        let roomsPerRow = 3
+        let roomW: CGFloat = 5
+        let roomH: CGFloat = 4
+        let gap:   CGFloat = 0.5
+
+        var built: [FloorRoom] = []
+
+        func layout(index i: Int) -> (CGFloat, CGFloat) {
+            let col = i % roomsPerRow
+            let row = i / roomsPerRow
+            return (CGFloat(col) * (roomW + gap), CGFloat(row) * (roomH + gap))
         }
+
+        for (i, hmRoom) in hmRooms.enumerated() {
+            let accs = homeKitVM.accessories(in: hmRoom).enumerated().map { idx, hmAcc -> FloorAccessory in
+                var a = makeFloorAccessory(from: hmAcc, idx: idx)
+                pullState(from: hmAcc, into: &a)
+                return a
+            }
+            let (gx, gy) = layout(index: i)
+            built.append(FloorRoom(
+                homeKitRoomID: hmRoom.uniqueIdentifier,
+                name: hmRoom.name,
+                gridX: gx, gridY: gy, gridW: roomW, gridH: roomH,
+                floorColor: palette[i % palette.count],
+                accessories: accs
+            ))
+        }
+
+        if !homeKitVM.unassignedAccessories.isEmpty {
+            let i = hmRooms.count
+            let accs = homeKitVM.unassignedAccessories.enumerated().map { idx, hmAcc -> FloorAccessory in
+                var a = makeFloorAccessory(from: hmAcc, idx: idx)
+                pullState(from: hmAcc, into: &a)
+                return a
+            }
+            let (gx, gy) = layout(index: i)
+            built.append(FloorRoom(
+                name: "Other",
+                gridX: gx, gridY: gy, gridW: roomW, gridH: roomH,
+                floorColor: palette[i % palette.count],
+                accessories: accs
+            ))
+        }
+
+        self.rooms = built
+        self.isRealHome = true
     }
 
-    // MARK: - HomeKit bridge (write floor plan state → real HomeKit)
+    private func makeFloorAccessory(from hmAcc: HMAccessory, idx: Int) -> FloorAccessory {
+        let cols = 3
+        let col = idx % cols
+        let row = idx / cols
+        let relX = (CGFloat(col) + 0.5) / CGFloat(cols)
+        let relY = min(0.90, 0.18 + CGFloat(row) * 0.28)
+        return FloorAccessory(
+            homeKitAccessoryID: hmAcc.uniqueIdentifier,
+            name: hmAcc.name,
+            category: AccessoryCategory.from(hmAcc.category),
+            relX: relX, relY: relY,
+            isPowered: false
+        )
+    }
+
+    // MARK: - HomeKit bridge (write floor plan state → real HomeKit by UUID)
 
     func bridgeToHomeKit(_ room: FloorRoom, _ acc: FloorAccessory) {
-        guard let homeKitVM = homeKitVM else { return }
-        guard let hmRoom = homeKitVM.rooms.first(where: { nameMatches($0.name, room.name) }) else { return }
-        let hmAccs = homeKitVM.accessories(in: hmRoom)
-        guard let hmAcc = hmAccs.first(where: { nameMatches($0.name, acc.name) }) else { return }
+        guard let homeKitVM = homeKitVM,
+              let hmAccID   = acc.homeKitAccessoryID,
+              let hmAcc     = homeKitVM.home.accessories.first(where: { $0.uniqueIdentifier == hmAccID })
+        else { return }
 
         let chars = hmAcc.services.flatMap(\.characteristics)
 
@@ -253,11 +325,22 @@ final class FloorPlanViewModel: NSObject, ObservableObject {
         if let v = read(HMCharacteristicTypeCurrentTemperature) as? Double { acc.currentTemp = Float(v) }
     }
 
-    // MARK: - Helpers
+    // MARK: - Re-read real HomeKit state for every accessory and refresh local
 
-    private func nameMatches(_ a: String, _ b: String) -> Bool {
-        a.lowercased().trimmingCharacters(in: .whitespaces) ==
-        b.lowercased().trimmingCharacters(in: .whitespaces)
+    func refreshFromHomeKit() {
+        guard let homeKitVM = homeKitVM else { return }
+        homeKitVM.readAllCharacteristics()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { [weak self] in
+            guard let self = self else { return }
+            for ri in self.rooms.indices {
+                for ai in self.rooms[ri].accessories.indices {
+                    guard let hmID = self.rooms[ri].accessories[ai].homeKitAccessoryID,
+                          let hmAcc = homeKitVM.home.accessories.first(where: { $0.uniqueIdentifier == hmID })
+                    else { continue }
+                    self.pullState(from: hmAcc, into: &self.rooms[ri].accessories[ai])
+                }
+            }
+        }
     }
 
     private func allLights(_ transform: (inout FloorAccessory) -> Void) {

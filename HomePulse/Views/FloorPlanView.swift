@@ -37,10 +37,19 @@ struct FloorPlanView: View {
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button { showAddRoom = true } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.orange)
+                    HStack(spacing: 14) {
+                        if vm.isRealHome {
+                            Button { vm.refreshFromHomeKit() } label: {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(.orange)
+                            }
+                        }
+                        Button { showAddRoom = true } label: {
+                            Image(systemName: "plus")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(.orange)
+                        }
                     }
                 }
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -401,7 +410,7 @@ private struct FloorAccessoryMarker: View {
                             .font(.system(size: 8))
                             .foregroundStyle(.white.opacity(0.7))
                     } else if accessory.category == .thermostat {
-                        Text(String(format: "%.0f°C", accessory.targetTemp))
+                        Text(String(format: "%.0f°F", Double(accessory.targetTemp) * 9.0 / 5.0 + 32.0))
                             .font(.system(size: 8))
                             .foregroundStyle(.white.opacity(0.7))
                     }
