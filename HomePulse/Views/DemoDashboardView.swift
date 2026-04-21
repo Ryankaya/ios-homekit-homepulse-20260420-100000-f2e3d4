@@ -1,9 +1,10 @@
 import SwiftUI
 
-// Shown when no HomeKit homes are configured — gives a full interactive demo.
+// Dashboard view — uses the shared FloorPlanViewModel so state is
+// always identical to what the Floor Plan tab shows (and vice versa).
 struct DemoDashboardView: View {
-    @StateObject private var vm = DemoHomeViewModel()
-    @State private var selectedAccessory: DemoAccessory?
+    @EnvironmentObject var floorPlan: FloorPlanViewModel
+    @State private var activeDevice: DashActiveDevice?
 
     var body: some View {
         NavigationView {
@@ -20,10 +21,44 @@ struct DemoDashboardView: View {
                     .padding(.bottom, 32)
                 }
             }
-            .navigationTitle(vm.home.name)
+            .navigationTitle(floorPlan.homeName)
             .navigationBarTitleDisplayMode(.large)
-            .sheet(item: $selectedAccessory) { acc in
-                DemoAccessoryDetailSheet(vm: DemoAccessoryViewModel(accessory: acc, parentVM: vm))
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarBackground(Color(red: 0.07, green: 0.07, blue: 0.10), for: .navigationBar)
+        }
+        // Route to the correct sheet based on device category
+        .sheet(item: $activeDevice) { device in
+            deviceSheet(for: device)
+        }
+    }
+
+    // MARK: - Device Sheet Routing
+
+    @ViewBuilder
+    private func deviceSheet(for device: DashActiveDevice) -> some View {
+        if let ri = floorPlan.rooms.firstIndex(where: { $0.id == device.roomID }),
+           let ai = floorPlan.rooms[ri].accessories.firstIndex(where: { $0.id == device.accID }) {
+
+            let acc      = floorPlan.rooms[ri].accessories[ai]
+            let roomName = floorPlan.rooms[ri].name
+            let binding  = Binding(
+                get:  { floorPlan.rooms[ri].accessories[ai] },
+                set:  { floorPlan.rooms[ri].accessories[ai] = $0 }
+            )
+            let onUpdate: (FloorAccessory) -> Void = { updated in
+                floorPlan.rooms[ri].accessories[ai] = updated
+                floorPlan.bridgeToHomeKit(floorPlan.rooms[ri], updated)
+            }
+
+            switch acc.category {
+            case .lightbulb:
+                LightSheet(accessory: binding, roomName: roomName, onUpdate: onUpdate)
+            case .thermostat:
+                ThermostatSheet(accessory: binding, roomName: roomName, onUpdate: onUpdate)
+            case .camera, .doorbell:
+                CameraSheet(accessory: binding, roomName: roomName, onUpdate: onUpdate)
+            default:
+                GenericDeviceSheet(accessory: binding, roomName: roomName, onUpdate: onUpdate)
             }
         }
     }
@@ -32,49 +67,40 @@ struct DemoDashboardView: View {
 
     private var demoBanner: some View {
         HStack(spacing: 10) {
-            Image(systemName: "info.circle.fill")
-                .foregroundStyle(.orange)
-            Text("Demo Mode — No HomeKit homes found. Add homes via the Home app.")
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.7))
+            Image(systemName: "info.circle.fill").foregroundStyle(.orange)
+            Text("Demo Mode — No HomeKit homes found. Add via the Home app to control real devices.")
+                .font(.caption).foregroundStyle(.white.opacity(0.65))
         }
         .padding(12)
-        .background(Color.orange.opacity(0.1))
+        .background(Color.orange.opacity(0.10))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
-        )
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Color.orange.opacity(0.25), lineWidth: 1))
+        .padding(.horizontal, 16).padding(.top, 8)
     }
 
-    // MARK: - Sections
+    // MARK: - Pulse Ring
 
     private var headerSection: some View {
-        VStack(spacing: 16) {
-            PulseRingView(
-                ratio: vm.healthRatio,
-                reachable: vm.reachableCount,
-                total: vm.totalCount
-            )
+        let total     = floorPlan.rooms.flatMap(\.accessories).count
+        let reachable = floorPlan.rooms.flatMap(\.accessories).filter(\.isPowered).count
+        let ratio     = total > 0 ? Double(reachable) / Double(total) : 0
+        return VStack(spacing: 16) {
+            PulseRingView(ratio: ratio, reachable: reachable, total: total)
             Text("Home Health")
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.45))
-                .tracking(2)
-                .textCase(.uppercase)
+                .font(.caption).foregroundStyle(.white.opacity(0.45))
+                .tracking(2).textCase(.uppercase)
         }
     }
+
+    // MARK: - Scenes
 
     private var sceneSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             sectionHeader("Scenes")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    ForEach(vm.home.scenes) { scene in
-                        DemoSceneButton(scene: scene, isActive: vm.activeScene == scene.id) {
-                            vm.activateScene(scene)
-                        }
+                    ForEach(floorPlan.scenes) { scene in
+                        DashSceneButton(scene: scene) { floorPlan.activateScene(scene) }
                     }
                 }
                 .padding(.horizontal, 16)
@@ -82,124 +108,133 @@ struct DemoDashboardView: View {
         }
     }
 
+    // MARK: - Stats
+
     private var statsSection: some View {
-        HStack(spacing: 12) {
-            StatPillView(icon: "house.fill",            value: "\(vm.totalCount)",     label: "Accessories", color: .orange)
-            StatPillView(icon: "checkmark.circle.fill",  value: "\(vm.reachableCount)", label: "Online",      color: .green)
-            StatPillView(icon: "theatermask.and.paintbrush.fill", value: "\(vm.home.scenes.count)", label: "Scenes", color: .purple)
+        let total     = floorPlan.rooms.flatMap(\.accessories).count
+        let reachable = floorPlan.rooms.flatMap(\.accessories).filter(\.isPowered).count
+        return HStack(spacing: 12) {
+            StatPillView(icon: "house.fill",             value: "\(total)",      label: "Accessories", color: .orange)
+            StatPillView(icon: "checkmark.circle.fill",  value: "\(reachable)",  label: "On",          color: .green)
+            StatPillView(icon: "theatermask.and.paintbrush.fill",
+                         value: "\(floorPlan.scenes.count)", label: "Scenes",    color: .purple)
         }
         .padding(.horizontal, 16)
     }
 
+    // MARK: - Rooms
+
     private var roomsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             sectionHeader("Rooms")
-            ForEach(vm.rooms) { room in
-                DemoRoomSectionView(
-                    room: room,
-                    accessories: vm.accessories(in: room),
-                    onSelect: { selectedAccessory = $0 }
+            ForEach(floorPlan.rooms.indices, id: \.self) { ri in
+                DashRoomSection(
+                    room: floorPlan.rooms[ri],
+                    onTap: { acc in handleTap(acc: acc, roomIdx: ri) }
                 )
             }
         }
     }
 
+    private func handleTap(acc: FloorAccessory, roomIdx: Int) {
+        switch acc.category {
+        case .lightbulb:
+            withAnimation(.spring(response: 0.25)) { floorPlan.toggleAccessory(id: acc.id) }
+        default:
+            activeDevice = DashActiveDevice(roomID: floorPlan.rooms[roomIdx].id, accID: acc.id)
+        }
+    }
+
     private func sectionHeader(_ title: String) -> some View {
-        Text(title)
-            .font(.headline)
-            .foregroundStyle(.white.opacity(0.85))
-            .padding(.horizontal, 16)
+        Text(title).font(.headline).foregroundStyle(.white.opacity(0.85)).padding(.horizontal, 16)
     }
 }
 
-// MARK: - Demo ViewModel
+// MARK: - Active Device
 
-final class DemoHomeViewModel: ObservableObject {
-    @Published var home: DemoHome = DemoHome.sample
+struct DashActiveDevice: Identifiable {
+    let id     = UUID()
+    let roomID: UUID
+    let accID:  UUID
+}
 
-    var rooms: [DemoRoom] { home.rooms }
-    var totalCount: Int { home.rooms.flatMap(\.accessories).count }
-    var reachableCount: Int { home.rooms.flatMap(\.accessories).filter(\.isReachable).count }
-    var healthRatio: Double {
-        guard totalCount > 0 else { return 0 }
-        return Double(reachableCount) / Double(totalCount)
-    }
-    @Published var activeScene: UUID?
+// MARK: - Scene Button
 
-    func accessories(in room: DemoRoom) -> [DemoAccessory] {
-        home.rooms.first { $0.id == room.id }?.accessories ?? []
-    }
+private struct DashSceneButton: View {
+    let scene: FloorScene
+    let action: () -> Void
+    @State private var tapped = false
 
-    func activateScene(_ scene: DemoScene) {
-        activeScene = scene.id
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            self?.activeScene = nil
-        }
-    }
-
-    func toggle(accessory: DemoAccessory) {
-        for ri in home.rooms.indices {
-            for ai in home.rooms[ri].accessories.indices {
-                if home.rooms[ri].accessories[ai].id == accessory.id {
-                    home.rooms[ri].accessories[ai].isPowered.toggle()
-                    return
-                }
+    var body: some View {
+        Button {
+            action()
+            withAnimation(.spring(response: 0.2)) { tapped = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+                withAnimation(.easeOut(duration: 0.3)) { tapped = false }
             }
-        }
-    }
-
-    func setBrightness(_ value: Float, for accessory: DemoAccessory) {
-        for ri in home.rooms.indices {
-            for ai in home.rooms[ri].accessories.indices {
-                if home.rooms[ri].accessories[ai].id == accessory.id {
-                    home.rooms[ri].accessories[ai].brightness = value
-                    return
-                }
+        } label: {
+            VStack(spacing: 8) {
+                Image(systemName: scene.icon)
+                    .font(.system(size: 22))
+                    .foregroundStyle(tapped ? .black : .orange)
+                Text(scene.name)
+                    .font(.caption2)
+                    .foregroundStyle(tapped ? .black.opacity(0.8) : .white.opacity(0.8))
+                    .lineLimit(1)
             }
+            .frame(width: 84, height: 74)
+            .background(tapped ? Color.orange : Color.white.opacity(0.07))
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Color.orange.opacity(0.25), lineWidth: 1))
         }
-    }
-
-    func setTemperature(_ value: Float, for accessory: DemoAccessory) {
-        for ri in home.rooms.indices {
-            for ai in home.rooms[ri].accessories.indices {
-                if home.rooms[ri].accessories[ai].id == accessory.id {
-                    home.rooms[ri].accessories[ai].temperature = value
-                    return
-                }
-            }
-        }
+        .buttonStyle(.plain)
+        .animation(.spring(response: 0.25), value: tapped)
     }
 }
 
-// MARK: - Demo Room Section
+// MARK: - Room Section
 
-struct DemoRoomSectionView: View {
-    let room: DemoRoom
-    let accessories: [DemoAccessory]
-    let onSelect: (DemoAccessory) -> Void
-    @State private var isExpanded = true
+private struct DashRoomSection: View {
+    let room: FloorRoom
+    let onTap: (FloorAccessory) -> Void
+    @State private var expanded = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Button { isExpanded.toggle() } label: {
+            Button { withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) { expanded.toggle() } } label: {
                 HStack {
+                    // Room color swatch
+                    RoundedRectangle(cornerRadius: 4).fill(room.floorColor)
+                        .frame(width: 14, height: 14)
+                        .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.black.opacity(0.15), lineWidth: 0.5))
                     Text(room.name).font(.subheadline.bold()).foregroundStyle(.white)
                     Spacer()
-                    Text("\(accessories.count)").font(.caption).foregroundStyle(.white.opacity(0.5))
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption).foregroundStyle(.white.opacity(0.4))
+                    // On-count badge
+                    let on = room.accessories.filter(\.isPowered).count
+                    if on > 0 {
+                        Text("\(on) on")
+                            .font(.caption2.bold())
+                            .foregroundStyle(.orange)
+                            .padding(.horizontal, 7).padding(.vertical, 3)
+                            .background(Color.orange.opacity(0.15))
+                            .clipShape(Capsule())
+                    }
+                    Text("\(room.accessories.count)")
+                        .font(.caption).foregroundStyle(.white.opacity(0.5))
+                    Image(systemName: expanded ? "chevron.up" : "chevron.down")
+                        .font(.caption).foregroundStyle(.white.opacity(0.35))
                 }
                 .padding(.vertical, 14)
             }
-            if isExpanded {
+
+            if expanded {
                 let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
                 LazyVGrid(columns: columns, spacing: 10) {
-                    ForEach(accessories) { accessory in
-                        DemoAccessoryCard(accessory: accessory, onTap: { onSelect(accessory) })
+                    ForEach(room.accessories) { acc in
+                        DashAccessoryCard(accessory: acc, onTap: { onTap(acc) })
                     }
                 }
-                .padding(.top, 4)
-                .padding(.bottom, 16)
+                .padding(.top, 4).padding(.bottom, 16)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
@@ -207,215 +242,81 @@ struct DemoRoomSectionView: View {
         .background(Color.white.opacity(0.04))
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .padding(.horizontal, 16)
-        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: isExpanded)
     }
 }
 
-// MARK: - Demo Accessory Card
+// MARK: - Accessory Card
 
-struct DemoAccessoryCard: View {
-    let accessory: DemoAccessory
+private struct DashAccessoryCard: View {
+    let accessory: FloorAccessory
     let onTap: () -> Void
 
     var body: some View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 8) {
-                HStack {
+                HStack(alignment: .top) {
                     Image(systemName: accessory.category.systemImage)
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundStyle(accessory.isPowered ? accessory.category.color : .gray)
                     Spacer()
+                    // For thermostat show temp; for camera show dot
+                    if accessory.category == .thermostat {
+                        Text(String(format: "%.0f°", accessory.targetTemp))
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundStyle(accessory.isPowered ? .orange : .gray)
+                    } else if accessory.category == .camera && accessory.isPowered {
+                        Circle().fill(.green).frame(width: 7, height: 7)
+                    } else if accessory.hasMotionAlert && accessory.isPowered {
+                        Circle().fill(.red).frame(width: 7, height: 7)
+                    }
                 }
+
                 Text(accessory.name)
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.white.opacity(0.85))
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
+                    .lineLimit(2).multilineTextAlignment(.leading)
 
-                if let brightness = accessory.brightness, accessory.isPowered {
+                // Brightness bar for lights
+                if accessory.category == .lightbulb && accessory.isPowered {
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
-                            Capsule().fill(Color.white.opacity(0.1)).frame(height: 3)
+                            Capsule().fill(Color.white.opacity(0.10)).frame(height: 3)
                             Capsule()
-                                .fill(accessory.category.color.opacity(0.8))
-                                .frame(width: geo.size.width * CGFloat(brightness / 100), height: 3)
+                                .fill(accessory.category.color.opacity(0.85))
+                                .frame(width: geo.size.width * CGFloat(accessory.brightness / 100), height: 3)
                         }
                     }
                     .frame(height: 3)
+                    .animation(.spring(response: 0.4), value: accessory.brightness)
+                }
+
+                // Temperature display for thermostat
+                if accessory.category == .thermostat {
+                    HStack(spacing: 4) {
+                        Image(systemName: accessory.thermostatMode.icon)
+                            .font(.system(size: 9))
+                        Text(accessory.thermostatMode.label)
+                            .font(.system(size: 9))
+                    }
+                    .foregroundStyle(accessory.isPowered ? accessory.thermostatMode.color : .gray)
                 }
             }
             .padding(12)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(accessory.isPowered ? accessory.category.color.opacity(0.13) : Color.white.opacity(0.05))
+                    .fill(accessory.isPowered
+                          ? accessory.category.color.opacity(0.13)
+                          : Color.white.opacity(0.05))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(accessory.isPowered ? accessory.category.color.opacity(0.3) : Color.white.opacity(0.08), lineWidth: 1)
+                            .stroke(accessory.isPowered
+                                    ? accessory.category.color.opacity(0.30)
+                                    : Color.white.opacity(0.08), lineWidth: 1)
                     )
             )
+            .animation(.spring(response: 0.3), value: accessory.isPowered)
         }
         .buttonStyle(.plain)
     }
 }
 
-// MARK: - Demo Scene Button
-
-struct DemoSceneButton: View {
-    let scene: DemoScene
-    let isActive: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                Image(systemName: scene.icon)
-                    .font(.system(size: 22))
-                    .foregroundStyle(isActive ? .black : .orange)
-                Text(scene.name)
-                    .font(.caption2)
-                    .foregroundStyle(isActive ? .black.opacity(0.8) : .white.opacity(0.8))
-                    .lineLimit(1)
-            }
-            .frame(width: 80, height: 72)
-            .background(isActive ? Color.orange : Color.white.opacity(0.07))
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.orange.opacity(0.25), lineWidth: 1)
-            )
-        }
-        .animation(.spring(response: 0.3), value: isActive)
-    }
-}
-
-// MARK: - Demo Accessory Detail
-
-final class DemoAccessoryViewModel: ObservableObject {
-    @Published var accessory: DemoAccessory
-    let parentVM: DemoHomeViewModel
-
-    init(accessory: DemoAccessory, parentVM: DemoHomeViewModel) {
-        self.accessory = accessory
-        self.parentVM = parentVM
-    }
-
-    func togglePower() {
-        accessory.isPowered.toggle()
-        parentVM.toggle(accessory: accessory)
-    }
-
-    func setBrightness(_ v: Float) {
-        accessory.brightness = v
-        parentVM.setBrightness(v, for: accessory)
-    }
-
-    func setTemperature(_ v: Float) {
-        accessory.temperature = v
-        parentVM.setTemperature(v, for: accessory)
-    }
-}
-
-struct DemoAccessoryDetailSheet: View {
-    @ObservedObject var vm: DemoAccessoryViewModel
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationView {
-            ZStack {
-                Color(red: 0.07, green: 0.07, blue: 0.10).ignoresSafeArea()
-                ScrollView {
-                    VStack(spacing: 24) {
-                        iconHeader
-                        controlsSection
-                        infoSection
-                    }
-                    .padding()
-                }
-            }
-            .navigationTitle(vm.accessory.name)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }.foregroundStyle(.orange)
-                }
-            }
-        }
-    }
-
-    private var iconHeader: some View {
-        ZStack {
-            Circle()
-                .fill(vm.accessory.category.color.opacity(vm.accessory.isPowered ? 0.2 : 0.06))
-                .frame(width: 110, height: 110)
-            Image(systemName: vm.accessory.category.systemImage)
-                .font(.system(size: 44, weight: .medium))
-                .foregroundStyle(vm.accessory.isPowered ? vm.accessory.category.color : .gray)
-        }
-        .padding(.top, 8)
-    }
-
-    private var controlsSection: some View {
-        VStack(spacing: 16) {
-            controlRow {
-                Toggle(isOn: Binding(get: { vm.accessory.isPowered }, set: { _ in vm.togglePower() })) {
-                    Label("Power", systemImage: "power").foregroundStyle(.white)
-                }
-                .tint(vm.accessory.category.color)
-            }
-
-            if vm.accessory.brightness != nil {
-                controlRow {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Label("Brightness  \(Int(vm.accessory.brightness ?? 0))%", systemImage: "sun.max.fill")
-                            .foregroundStyle(.white).font(.subheadline)
-                        Slider(
-                            value: Binding(get: { Double(vm.accessory.brightness ?? 0) }, set: { vm.setBrightness(Float($0)) }),
-                            in: 0...100, step: 5
-                        )
-                        .tint(vm.accessory.category.color)
-                        .disabled(!vm.accessory.isPowered)
-                    }
-                }
-            }
-
-            if vm.accessory.temperature != nil {
-                controlRow {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Label("Temperature  \(Int(vm.accessory.temperature ?? 0))°C", systemImage: "thermometer")
-                            .foregroundStyle(.white).font(.subheadline)
-                        Slider(
-                            value: Binding(get: { Double(vm.accessory.temperature ?? 20) }, set: { vm.setTemperature(Float($0)) }),
-                            in: 16...30, step: 0.5
-                        )
-                        .tint(.orange)
-                    }
-                }
-            }
-        }
-    }
-
-    private var infoSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Details").font(.headline).foregroundStyle(.white.opacity(0.7))
-            infoRow(label: "Category", value: vm.accessory.category.rawValue.capitalized)
-            infoRow(label: "Status", value: vm.accessory.isPowered ? "On" : "Off")
-            infoRow(label: "Reachable", value: vm.accessory.isReachable ? "Yes" : "No")
-        }
-        .padding(16)
-        .background(Color.white.opacity(0.05))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-
-    private func infoRow(label: String, value: String) -> some View {
-        HStack {
-            Text(label).font(.subheadline).foregroundStyle(.white.opacity(0.5))
-            Spacer()
-            Text(value).font(.subheadline).foregroundStyle(.white.opacity(0.85))
-        }
-    }
-
-    private func controlRow<C: View>(@ViewBuilder content: () -> C) -> some View {
-        content().padding(16).background(Color.white.opacity(0.06))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-    }
-}

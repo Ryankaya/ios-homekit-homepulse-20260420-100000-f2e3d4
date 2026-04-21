@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct FloorPlanView: View {
-    @StateObject private var vm = FloorPlanViewModel()
+    @EnvironmentObject private var vm: FloorPlanViewModel
     @State private var showAddRoom = false
     @State private var roomToDelete: FloorRoom?
     @State private var activeDevice: ActiveDevice?
@@ -79,30 +79,34 @@ struct FloorPlanView: View {
             let acc = vm.rooms[idx].accessories[accIdx]
             let roomName = room?.name ?? ""
 
+            let onUpdate: (FloorAccessory) -> Void = { updated in
+                vm.rooms[idx].accessories[accIdx] = updated
+                vm.bridgeToHomeKit(vm.rooms[idx], updated)
+            }
             switch acc.category {
             case .lightbulb:
                 LightSheet(
                     accessory: bindingFor(roomIdx: idx, accIdx: accIdx),
                     roomName: roomName,
-                    onUpdate: { updated in vm.rooms[idx].accessories[accIdx] = updated }
+                    onUpdate: onUpdate
                 )
             case .thermostat:
                 ThermostatSheet(
                     accessory: bindingFor(roomIdx: idx, accIdx: accIdx),
                     roomName: roomName,
-                    onUpdate: { updated in vm.rooms[idx].accessories[accIdx] = updated }
+                    onUpdate: onUpdate
                 )
             case .camera, .doorbell:
                 CameraSheet(
                     accessory: bindingFor(roomIdx: idx, accIdx: accIdx),
                     roomName: roomName,
-                    onUpdate: { updated in vm.rooms[idx].accessories[accIdx] = updated }
+                    onUpdate: onUpdate
                 )
             default:
                 GenericDeviceSheet(
                     accessory: bindingFor(roomIdx: idx, accIdx: accIdx),
                     roomName: roomName,
-                    onUpdate: { updated in vm.rooms[idx].accessories[accIdx] = updated }
+                    onUpdate: onUpdate
                 )
             }
         }

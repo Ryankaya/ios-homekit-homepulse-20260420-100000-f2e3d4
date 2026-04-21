@@ -3,27 +3,27 @@ import HomeKit
 
 struct ContentView: View {
     @EnvironmentObject var homeKitManager: HomeKitManager
+    @EnvironmentObject var floorPlan: FloorPlanViewModel
 
     var body: some View {
         if homeKitManager.isLoading {
             LoadingView()
-                .transition(.opacity)
         } else if homeKitManager.authorizationStatus == .restricted {
             PermissionDeniedView()
         } else {
-            mainTabView
+            TabView {
+                dashboardTab
+                    .tabItem { Label("Home", systemImage: "house.fill") }
+                FloorPlanView()
+                    .tabItem { Label("Floor Plan", systemImage: "square.grid.2x2.fill") }
+            }
+            .tint(.orange)
+            // When a real HomeKit home loads, sync floor plan state from it
+            .onChange(of: homeKitManager.selectedHome?.uniqueIdentifier) { _ in
+                syncHomeKit()
+            }
+            .onAppear { syncHomeKit() }
         }
-    }
-
-    private var mainTabView: some View {
-        TabView {
-            dashboardTab
-                .tabItem { Label("Home", systemImage: "house.fill") }
-
-            FloorPlanView()
-                .tabItem { Label("Floor Plan", systemImage: "square.grid.2x2.fill") }
-        }
-        .tint(.orange)
     }
 
     @ViewBuilder
@@ -34,13 +34,21 @@ struct ContentView: View {
             DemoDashboardView()
         }
     }
+
+    private func syncHomeKit() {
+        guard let selected = homeKitManager.selectedHome else { return }
+        let homeVM = HomeViewModel(home: selected)
+        homeVM.readAllCharacteristics()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            floorPlan.syncFromHomeKit(homeVM)
+        }
+    }
 }
 
 // MARK: - Loading
 
 private struct LoadingView: View {
     @State private var pulse = false
-
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -66,29 +74,20 @@ private struct PermissionDeniedView: View {
         ZStack {
             Color.black.ignoresSafeArea()
             VStack(spacing: 20) {
-                Image(systemName: "lock.shield.fill")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.red)
-                Text("HomeKit Access Denied")
-                    .font(.title2.bold())
-                    .foregroundStyle(.white)
+                Image(systemName: "lock.shield.fill").font(.system(size: 60)).foregroundStyle(.red)
+                Text("HomeKit Access Denied").font(.title2.bold()).foregroundStyle(.white)
                 Text("Enable HomeKit access in Settings to control your home.")
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.white.opacity(0.6))
-                    .padding(.horizontal, 40)
+                    .multilineTextAlignment(.center).foregroundStyle(.white.opacity(0.6)).padding(.horizontal, 40)
                 Button("Open Settings") {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
-                    }
+                    if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.orange)
+                .buttonStyle(.borderedProminent).tint(.orange)
             }
         }
     }
 }
 
-// MARK: - Real HomeKit Dashboard
+// MARK: - Real HomeKit Dashboard wrapper
 
 private struct RealHomeDashboard: View {
     let home: HMHome
@@ -99,7 +98,5 @@ private struct RealHomeDashboard: View {
         _viewModel = StateObject(wrappedValue: HomeViewModel(home: home))
     }
 
-    var body: some View {
-        DashboardView(viewModel: viewModel)
-    }
+    var body: some View { DashboardView(viewModel: viewModel) }
 }
