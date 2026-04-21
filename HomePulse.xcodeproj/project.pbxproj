@@ -16,7 +16,9 @@
 		603932961035F5C42923284B /* AccessoryDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FD12D91BEC60DA9C312AC9D /* AccessoryDetailSheet.swift */; };
 		6792DED4D5C18A907A05DD21 /* HomeKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFB522B381CE97B2631CC3AD /* HomeKitManager.swift */; };
 		68F6108BC69DEEE0EDD6714F /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E79B3109659A988A4206E7 /* HomeViewModel.swift */; };
+		7481E3F9409F349DF716AE2A /* CameraSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2684D3D26C28EBCAD856FF2A /* CameraSheet.swift */; };
 		7D26E5955C7A63618E14076A /* DemoDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D57B6A46213C65E245EFBD97 /* DemoDashboardView.swift */; };
+		805A784657D49571AD7E62F6 /* ThermostatSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 446AF48F7BFE4AC2B42A64CD /* ThermostatSheet.swift */; };
 		8A976C36CFC828CC7EEB77AD /* FloorPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B00AB3AF29768D33786A90A /* FloorPlanView.swift */; };
 		8E102820D7D087D22F13EC1A /* AccessoryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16E98824921C0B5CED0E8C01 /* AccessoryCardView.swift */; };
 		A259F1E2F521A3226B9D0258 /* AccessoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D782C32CBFEE58A45D5F0349 /* AccessoryViewModel.swift */; };
@@ -24,6 +26,7 @@
 		B183C0E887A90BF709B9602F /* HomePulseApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C84B86EE1522B49974EE3D8 /* HomePulseApp.swift */; };
 		C12B87D7CD84714B24966CF3 /* AccessoryCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4C6263C17191DA921C10FEC /* AccessoryCategory.swift */; };
 		E777AD64AB143B0B96D29E0B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25D6C3B8C09E905A87992FF /* ContentView.swift */; };
+		F5174C39E105DA34A522E7D5 /* LightSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26FD4F060E094A410E7A9EB7 /* LightSheet.swift */; };
 		F9A94A5559811441090C50E2 /* RoomSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3959E92C374FA6707DF08CE4 /* RoomSectionView.swift */; };
 /* End PBXBuildFile section */
 
@@ -32,9 +35,12 @@
 		0378D618FEB2EF7A42EDFA18 /* AddRoomSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddRoomSheet.swift; sourceTree = "<group>"; };
 		15E79B3109659A988A4206E7 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		16E98824921C0B5CED0E8C01 /* AccessoryCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessoryCardView.swift; sourceTree = "<group>"; };
+		2684D3D26C28EBCAD856FF2A /* CameraSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraSheet.swift; sourceTree = "<group>"; };
+		26FD4F060E094A410E7A9EB7 /* LightSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightSheet.swift; sourceTree = "<group>"; };
 		3959E92C374FA6707DF08CE4 /* RoomSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomSectionView.swift; sourceTree = "<group>"; };
 		3B00AB3AF29768D33786A90A /* FloorPlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloorPlanView.swift; sourceTree = "<group>"; };
 		3C84B86EE1522B49974EE3D8 /* HomePulseApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePulseApp.swift; sourceTree = "<group>"; };
+		446AF48F7BFE4AC2B42A64CD /* ThermostatSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThermostatSheet.swift; sourceTree = "<group>"; };
 		67A75C175F2523523A570AE0 /* HomePulse.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HomePulse.entitlements; sourceTree = "<group>"; };
 		6FD12D91BEC60DA9C312AC9D /* AccessoryDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessoryDetailSheet.swift; sourceTree = "<group>"; };
 		7F42200280324D9E2649FB3D /* PulseRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PulseRingView.swift; sourceTree = "<group>"; };
@@ -102,6 +108,16 @@
 			path = Components;
 			sourceTree = "<group>";
 		};
+		76A1DF4220284A46B6657017 /* DeviceSheets */ = {
+			isa = PBXGroup;
+			children = (
+				2684D3D26C28EBCAD856FF2A /* CameraSheet.swift */,
+				26FD4F060E094A410E7A9EB7 /* LightSheet.swift */,
+				446AF48F7BFE4AC2B42A64CD /* ThermostatSheet.swift */,
+			);
+			path = DeviceSheets;
+			sourceTree = "<group>";
+		};
 		8CAF8B1C53C4225E8C15CD86 /* Views */ = {
 			isa = PBXGroup;
 			children = (
@@ -114,6 +130,7 @@
 				3B00AB3AF29768D33786A90A /* FloorPlanView.swift */,
 				3959E92C374FA6707DF08CE4 /* RoomSectionView.swift */,
 				717814F47CF942DD67229D3F /* Components */,
+				76A1DF4220284A46B6657017 /* DeviceSheets */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -202,6 +219,7 @@
 				603932961035F5C42923284B /* AccessoryDetailSheet.swift in Sources */,
 				A259F1E2F521A3226B9D0258 /* AccessoryViewModel.swift in Sources */,
 				55011CAF32198CCF6AFA6EF1 /* AddRoomSheet.swift in Sources */,
+				7481E3F9409F349DF716AE2A /* CameraSheet.swift in Sources */,
 				E777AD64AB143B0B96D29E0B /* ContentView.swift in Sources */,
 				38B43369163D75475E992632 /* DashboardView.swift in Sources */,
 				7D26E5955C7A63618E14076A /* DemoDashboardView.swift in Sources */,
@@ -211,9 +229,11 @@
 				6792DED4D5C18A907A05DD21 /* HomeKitManager.swift in Sources */,
 				B183C0E887A90BF709B9602F /* HomePulseApp.swift in Sources */,
 				68F6108BC69DEEE0EDD6714F /* HomeViewModel.swift in Sources */,
+				F5174C39E105DA34A522E7D5 /* LightSheet.swift in Sources */,
 				382C8573BAA6D59A8D16F34E /* PulseRingView.swift in Sources */,
 				F9A94A5559811441090C50E2 /* RoomSectionView.swift in Sources */,
 				575EDA01F91EB5F129C48420 /* StatPillView.swift in Sources */,
+				805A784657D49571AD7E62F6 /* ThermostatSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
