@@ -5,6 +5,7 @@ struct DashboardView: View {
     @ObservedObject var viewModel: HomeViewModel
     @EnvironmentObject var homeKitManager: HomeKitManager
     @State private var selectedAccessory: HMAccessory?
+    @State private var showAccessorySheet = false
 
     var body: some View {
         NavigationView {
@@ -31,8 +32,10 @@ struct DashboardView: View {
                     }
                 }
             }
-            .sheet(item: $selectedAccessory) { acc in
-                AccessoryDetailSheet(accessory: acc)
+            .sheet(isPresented: $showAccessorySheet) {
+                if let accessory = selectedAccessory {
+                    AccessoryDetailSheet(accessory: accessory)
+                }
             }
             .onAppear { viewModel.readAllCharacteristics() }
             .refreshable { viewModel.refresh() }
@@ -102,13 +105,19 @@ struct DashboardView: View {
                 RoomSectionView(
                     room: room,
                     accessories: viewModel.accessories(in: room),
-                    onSelectAccessory: { selectedAccessory = $0 }
+                    onSelectAccessory: { 
+                        selectedAccessory = $0
+                        showAccessorySheet = true
+                    }
                 )
             }
             if !viewModel.unassignedAccessories.isEmpty {
                 UnassignedSectionView(
                     accessories: viewModel.unassignedAccessories,
-                    onSelectAccessory: { selectedAccessory = $0 }
+                    onSelectAccessory: { 
+                        selectedAccessory = $0
+                        showAccessorySheet = true
+                    }
                 )
             }
         }

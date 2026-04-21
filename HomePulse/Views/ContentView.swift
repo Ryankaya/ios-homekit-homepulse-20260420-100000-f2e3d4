@@ -5,20 +5,38 @@ struct ContentView: View {
     @EnvironmentObject var homeKitManager: HomeKitManager
 
     var body: some View {
-        Group {
-            if homeKitManager.isLoading {
-                LoadingView()
-            } else if homeKitManager.authorizationStatus == .restricted {
-                PermissionDeniedView()
-            } else if let home = homeKitManager.selectedHome {
-                RealHomeDashboard(home: home)
-            } else {
-                DemoDashboardView()
-            }
+        if homeKitManager.isLoading {
+            LoadingView()
+                .transition(.opacity)
+        } else if homeKitManager.authorizationStatus == .restricted {
+            PermissionDeniedView()
+        } else {
+            mainTabView
         }
-        .animation(.easeInOut(duration: 0.4), value: homeKitManager.isLoading)
+    }
+
+    private var mainTabView: some View {
+        TabView {
+            dashboardTab
+                .tabItem { Label("Home", systemImage: "house.fill") }
+
+            FloorPlanView()
+                .tabItem { Label("Floor Plan", systemImage: "square.grid.2x2.fill") }
+        }
+        .tint(.orange)
+    }
+
+    @ViewBuilder
+    private var dashboardTab: some View {
+        if let home = homeKitManager.selectedHome {
+            RealHomeDashboard(home: home)
+        } else {
+            DemoDashboardView()
+        }
     }
 }
+
+// MARK: - Loading
 
 private struct LoadingView: View {
     @State private var pulse = false
@@ -40,6 +58,8 @@ private struct LoadingView: View {
         }
     }
 }
+
+// MARK: - Permission Denied
 
 private struct PermissionDeniedView: View {
     var body: some View {
@@ -67,6 +87,8 @@ private struct PermissionDeniedView: View {
         }
     }
 }
+
+// MARK: - Real HomeKit Dashboard
 
 private struct RealHomeDashboard: View {
     let home: HMHome

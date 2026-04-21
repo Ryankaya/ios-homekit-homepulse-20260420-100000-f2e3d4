@@ -7,14 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		27F70D12D5763890992DFB7C /* FloorPlanViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034BA6CEA063E8CC0300B63F /* FloorPlanViewModel.swift */; };
 		382C8573BAA6D59A8D16F34E /* PulseRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F42200280324D9E2649FB3D /* PulseRingView.swift */; };
 		38B43369163D75475E992632 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2065DF8E841CD775DC96164 /* DashboardView.swift */; };
+		55011CAF32198CCF6AFA6EF1 /* AddRoomSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0378D618FEB2EF7A42EDFA18 /* AddRoomSheet.swift */; };
 		56B7015B61357959D143BDFC /* DemoData.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE692E9B9C18BDE78F08AA9 /* DemoData.swift */; };
 		575EDA01F91EB5F129C48420 /* StatPillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6FFABCC72FF2D3702859407 /* StatPillView.swift */; };
 		603932961035F5C42923284B /* AccessoryDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FD12D91BEC60DA9C312AC9D /* AccessoryDetailSheet.swift */; };
 		6792DED4D5C18A907A05DD21 /* HomeKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFB522B381CE97B2631CC3AD /* HomeKitManager.swift */; };
 		68F6108BC69DEEE0EDD6714F /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E79B3109659A988A4206E7 /* HomeViewModel.swift */; };
 		7D26E5955C7A63618E14076A /* DemoDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D57B6A46213C65E245EFBD97 /* DemoDashboardView.swift */; };
+		8A976C36CFC828CC7EEB77AD /* FloorPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B00AB3AF29768D33786A90A /* FloorPlanView.swift */; };
 		8E102820D7D087D22F13EC1A /* AccessoryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16E98824921C0B5CED0E8C01 /* AccessoryCardView.swift */; };
 		A259F1E2F521A3226B9D0258 /* AccessoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D782C32CBFEE58A45D5F0349 /* AccessoryViewModel.swift */; };
 		A89861D8E5160C7612C6D55A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DE2C30A225B34804A790A9B0 /* Assets.xcassets */; };
@@ -25,9 +28,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		034BA6CEA063E8CC0300B63F /* FloorPlanViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloorPlanViewModel.swift; sourceTree = "<group>"; };
+		0378D618FEB2EF7A42EDFA18 /* AddRoomSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddRoomSheet.swift; sourceTree = "<group>"; };
 		15E79B3109659A988A4206E7 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		16E98824921C0B5CED0E8C01 /* AccessoryCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessoryCardView.swift; sourceTree = "<group>"; };
 		3959E92C374FA6707DF08CE4 /* RoomSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomSectionView.swift; sourceTree = "<group>"; };
+		3B00AB3AF29768D33786A90A /* FloorPlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloorPlanView.swift; sourceTree = "<group>"; };
 		3C84B86EE1522B49974EE3D8 /* HomePulseApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePulseApp.swift; sourceTree = "<group>"; };
 		67A75C175F2523523A570AE0 /* HomePulse.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HomePulse.entitlements; sourceTree = "<group>"; };
 		6FD12D91BEC60DA9C312AC9D /* AccessoryDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessoryDetailSheet.swift; sourceTree = "<group>"; };
@@ -80,6 +86,7 @@
 			isa = PBXGroup;
 			children = (
 				D782C32CBFEE58A45D5F0349 /* AccessoryViewModel.swift */,
+				034BA6CEA063E8CC0300B63F /* FloorPlanViewModel.swift */,
 				BFB522B381CE97B2631CC3AD /* HomeKitManager.swift */,
 				15E79B3109659A988A4206E7 /* HomeViewModel.swift */,
 			);
@@ -100,9 +107,11 @@
 			children = (
 				16E98824921C0B5CED0E8C01 /* AccessoryCardView.swift */,
 				6FD12D91BEC60DA9C312AC9D /* AccessoryDetailSheet.swift */,
+				0378D618FEB2EF7A42EDFA18 /* AddRoomSheet.swift */,
 				F25D6C3B8C09E905A87992FF /* ContentView.swift */,
 				D2065DF8E841CD775DC96164 /* DashboardView.swift */,
 				D57B6A46213C65E245EFBD97 /* DemoDashboardView.swift */,
+				3B00AB3AF29768D33786A90A /* FloorPlanView.swift */,
 				3959E92C374FA6707DF08CE4 /* RoomSectionView.swift */,
 				717814F47CF942DD67229D3F /* Components */,
 			);
@@ -192,10 +201,13 @@
 				C12B87D7CD84714B24966CF3 /* AccessoryCategory.swift in Sources */,
 				603932961035F5C42923284B /* AccessoryDetailSheet.swift in Sources */,
 				A259F1E2F521A3226B9D0258 /* AccessoryViewModel.swift in Sources */,
+				55011CAF32198CCF6AFA6EF1 /* AddRoomSheet.swift in Sources */,
 				E777AD64AB143B0B96D29E0B /* ContentView.swift in Sources */,
 				38B43369163D75475E992632 /* DashboardView.swift in Sources */,
 				7D26E5955C7A63618E14076A /* DemoDashboardView.swift in Sources */,
 				56B7015B61357959D143BDFC /* DemoData.swift in Sources */,
+				8A976C36CFC828CC7EEB77AD /* FloorPlanView.swift in Sources */,
+				27F70D12D5763890992DFB7C /* FloorPlanViewModel.swift in Sources */,
 				6792DED4D5C18A907A05DD21 /* HomeKitManager.swift in Sources */,
 				B183C0E887A90BF709B9602F /* HomePulseApp.swift in Sources */,
 				68F6108BC69DEEE0EDD6714F /* HomeViewModel.swift in Sources */,
